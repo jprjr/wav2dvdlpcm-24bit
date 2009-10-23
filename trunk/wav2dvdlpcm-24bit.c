@@ -30,7 +30,7 @@ Then execute it with something like:
 wav2dvdlpcm-24bit <infile.wav >outfile.lpcm
 
 Or, from a raw-audio file:
-wav2dvdlpcm-24bit -4 <infile.raw >outfile.lpcm
+wav2dvdlpcm-24bit -r <infile.raw >outfile.lpcm
 
 Or, from a flac file:
 flac -d -c infile.flac | wav2dvdlpcm-24bit >outfile.lpcm
