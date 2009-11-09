@@ -49,7 +49,14 @@ and the end-point should be:
 1514958180
 }}}
 
-Next, let's calculate the total number of frames we're going to need:
+Next, let's calculate the total number of frames we're going to need, and encode a basic video with that number of frames:
 {{{
-read size < end-point.txt ; frames=`echo "scale=25;($size/576000)*(24000/1001)" | bc | sed 's/[.].*//' `; echo "\$frames = $frames"
+framerate=24000/1001; read size < end-point.txt ; frames=`echo "scale=10;($size/576000)*($framerate)" | bc | sed 's/[.].*//' `; convert xc:black -scale 352x240! -depth 8 bg.ppm; ppmtoy4m -n $frames -F 24000:1001 -A 10:11 -I p -r -S 420mpeg2 bg.ppm | mpeg2enc -f 8 -p -M 4 -b 200 -o video.m2v
 }}}
+
+Now, we can multiplex:
+{{{
+mplex -f 8 -o dvd-ready.mpg video.m2v audio.lpcm -L96000:2:24
+}}}
+
+The next step is calculating the chapter points, and running this whole thing through dvdauthor:
