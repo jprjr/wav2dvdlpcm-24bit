@@ -1,0 +1,50 @@
+#summary A brief example of usage
+#labels Featured
+
+= Introduction =
+
+This is a brief example of using this program, along with mjpegtools, imagemagick, flac, cdrkit, and dvdauthor to genereate a DVD image, with each song track being a chapter.
+
+THIS GUIDE IS A WORK IN PROGRESS AND IS NOT YET FINISHED
+
+
+= Details =
+
+For this example, I'm going to be using the 24-bit, 96kHz FLAC version of Nine Inch Nails' [http://theslip.nin.com/ The Slip].  It's available for free, so it makes for a great example.
+
+I'm assuming that, at this point, you've already obtained the material, and have all needed programs installed, including wav2dvdlpcm-24bit.
+
+==Step 1==
+Navigate to your project directory, we should have all the FLAC files in here.  We'll setup an empty audio.lpcm file, as well as an empty start-points file, and an end-point file:
+
+{{{
+touch audio.lpcm
+touch start-points.txt
+touch end-point.txt
+}}}
+
+The start-points value will contain our track starting points, as raw audio bytes.  We'll use these to figure out our chapters.
+
+==Step 2 - Generate Audio Stream==
+Next, we'll decode the audio, and keep track of where each track starts, as well as the final byte count:
+{{{
+for file in *.flac; do stat -c "%s" audio.lpcm >> start-points.txt; flac -d -c --force-raw-format --sign=signed --endian=little "$file" | wav2dvdlpcm-24bit -r >> audio.lpcm; done; stat -c "%s" audio.lpcm >> end-point.txt
+}}}
+
+So now, assuming you're using the Nine Inch Nails "The Slip," your start-points file should contain:
+{{{
+0
+49282704
+185338860
+317531808
+466821636
+631124508
+801110796
+922043748
+1183340856
+1343253876
+}}}
+and the end-point should be:
+{{{
+1514958180
+}}}
