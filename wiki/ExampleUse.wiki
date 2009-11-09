@@ -48,3 +48,8 @@ and the end-point should be:
 {{{
 1514958180
 }}}
+
+Next, let's calculate the total number of frames we're going to need:
+{{{
+read size < end-point.txt ; frames=`echo "scale=25;($size/576000)*(24000/1001)" | bc | sed 's/[.].*//' `; echo "\$frames = $frames"
+}}}
