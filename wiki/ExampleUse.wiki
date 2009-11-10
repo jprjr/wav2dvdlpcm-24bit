@@ -64,4 +64,71 @@ mplex -f 8 -o dvd-ready.mpg video.m2v audio.lpcm -L96000:2:24
 The next step is calculating the chapter points, and running this whole thing through dvdauthor.
 {{{
 chapters=""; for point in `cat start-points.txt`; do fseconds=`echo "scale=10;($point/576000)" | bc` ; seconds=` echo $fseconds | sed 's/[.].*//'`; hours=$((seconds/3600)); seconds=$((seconds%3600)); minutes=$((seconds/60)); seconds=$((seconds%60)); afseconds=`echo $fseconds | sed 's/.*[.]//'`; chapters=`printf "%s%02d:%02d:%02.3f," "$chapters" $hours $minutes "$seconds.$afseconds"`; done; chapters=${chapters%","}; dvdauthor -o THE_SLIP -t -c "$chapters" --file=dvd-ready.mpg
+dvdauthor -o THE_SLIP -T
+}}}
+
+=This whole thing as a bash script=
+Here's a slightly modified version of the above, as a handy and awesome bash script.  I just cd to the directory containing FLAC files, and run the script:
+{{{
+#!/bin/bash
+
+#Setup the frame size, the frame rate, whether we want pulldown
+framesize=352x240
+framerate=24000/1001
+mpeg2enc_framerate=24000:1001
+pulldown=-p
+
+#the audio byterate = channels * (bits/8) * frequency
+#so, for 24-bit, 96kHz: 2 * (24/8) * 96000 = 576000
+byterate=576000
+
+#specify the output directory
+outdir=THE_SLIP
+
+touch audio.lpcm
+touch start-points.txt
+touch end-point.txt
+
+for file in *.flac
+do
+  stat -c "%s" audio.lpcm >> start-points.txt
+  flac -d -c --force-raw-format --sign=signed --endian=little "$file" | \
+  wav2dvdlpcm-24bit -r >> audio.lpcm
+done
+
+audiosize=`stat -c "%s" audio.lpcm`
+
+frames=`echo "scale=10;($size/$byterate)*($framerate)" | bc | sed 's/[.].*//' `
+
+convert xc:black -scale $framesize! -depth 8 bg.ppm
+ppmtoy4m -n $frames -F $mpeg2enc_framterate -A 10:11 -I p -r -S 420mpeg2 bg.ppm |\
+mpeg2enc -f 8 $pulldown -b 200 -o video.m2v
+
+mplex -f 8 -o dvd-ready.mpg video.m2v audio.lpcm -L96000:2:24
+
+chapters=""
+for point in `cat start-points.txt`
+do
+  #fseconds = raw number of seconds
+  fseconds=`echo "scale=10;($point/$byterate)" | bc`
+
+  #seconds will be our seconds *without* the decimal
+  seconds=`echo $fseconds | sed 's/[.].*//'`
+
+  hours=$((seconds/3600))
+  seconds=$((seconds%3600))
+  minutes=$((seconds/60))
+  seconds=$((seconds%60))
+
+  #afseconds will be everything after the decimal
+  afseconds=`echo $fseconds | sed 's/.*[.]//'`
+
+  chapters=`printf "%s%02d:%02d:%02.3f," \
+  "$chapters" $hours $minutes "$seconds.$afseconds"`
+done
+
+chapters=${chapters%","}
+
+dvdauthor -o $outdir -t -c "$chapters" --file=dvd-ready.mpg
+dvdauthor -o $outdir -T
 }}}
