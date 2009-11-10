@@ -86,9 +86,8 @@ byterate=576000
 #specify the output directory
 outdir=THE_SLIP
 
-touch audio.lpcm; echo "" > audio.lpcm
-touch start-points.txt; echo "" > start-points.txt
-touch end-point.txt; echo "" > end-point.txt
+touch audio.lpcm
+touch start-points.txt
 
 for file in *.flac
 do
@@ -99,11 +98,9 @@ done
 
 audiosize=`stat -c "%s" audio.lpcm`
 
-
 frames=`echo "scale=10;($audiosize/$byterate)*($framerate)" | bc | sed 's/[.].*//'`
 
 convert xc:black -scale $framesize! -depth 8 bg.ppm
-
 
 ppmtoy4m -n $frames -F $mpeg2enc_framerate -A $aspect -I p -r -S 420mpeg2 bg.ppm |\
 mpeg2enc -f 8 $pulldown -b 200 -o video.m2v
@@ -138,8 +135,13 @@ done
 
 chapters=${chapters%","}
 
-
-
 dvdauthor -o $outdir -t -c "$chapters" --file=dvd-ready.mpg
 dvdauthor -o $outdir -T
+
+rm dvd-ready.mpg
+rm start-points.txt
+
+mkisofs -dvd-video -udf -V "$outdir" -o "$outdir.iso" "$outdir"
+
+rm -rf $outdir
 }}}
