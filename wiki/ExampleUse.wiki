@@ -61,4 +61,7 @@ Now, we can multiplex:
 mplex -f 8 -o dvd-ready.mpg video.m2v audio.lpcm -L96000:2:24
 }}}
 
-The next step is calculating the chapter points, and running this whole thing through dvdauthor:
+The next step is calculating the chapter points, and running this whole thing through dvdauthor.
+{{{
+chapters=""; for point in `cat start-points.txt`; do fseconds=`echo "scale=10;($point/576000)" | bc` ; seconds=` echo $fseconds | sed 's/[.].*//'`; hours=$((seconds/3600)); seconds=$((seconds%3600)); minutes=$((seconds/60)); seconds=$((seconds%60)); afseconds=`echo $fseconds | sed 's/.*[.]//'`; chapters=`printf "%s%02d:%02d:%02.3f," "$chapters" $hours $minutes "$seconds.$afseconds"`; done; chapters=${chapters%","}; dvdauthor -o THE_SLIP -t -c "$chapters" --file=dvd-ready.mpg
+}}}
