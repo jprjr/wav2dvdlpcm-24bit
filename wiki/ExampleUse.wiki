@@ -72,10 +72,11 @@ Here's a slightly modified version of the above, as a handy and awesome bash scr
 {{{
 #!/bin/bash
 
-#Setup the frame size, the frame rate, whether we want pulldown
+#Setup the frame size, the frame rate, aspect ratio, whether we want pulldown
 framesize=352x240
 framerate=24000/1001
 mpeg2enc_framerate=24000:1001
+aspect=10:11
 pulldown=-p
 
 #the audio byterate = channels * (bits/8) * frequency
@@ -85,9 +86,9 @@ byterate=576000
 #specify the output directory
 outdir=THE_SLIP
 
-touch audio.lpcm
-touch start-points.txt
-touch end-point.txt
+touch audio.lpcm; echo "" > audio.lpcm
+touch start-points.txt; echo "" > start-points.txt
+touch end-point.txt; echo "" > end-point.txt
 
 for file in *.flac
 do
@@ -98,13 +99,21 @@ done
 
 audiosize=`stat -c "%s" audio.lpcm`
 
-frames=`echo "scale=10;($size/$byterate)*($framerate)" | bc | sed 's/[.].*//' `
+
+frames=`echo "scale=10;($audiosize/$byterate)*($framerate)" | bc | sed 's/[.].*//'`
 
 convert xc:black -scale $framesize! -depth 8 bg.ppm
-ppmtoy4m -n $frames -F $mpeg2enc_framterate -A 10:11 -I p -r -S 420mpeg2 bg.ppm |\
+
+
+ppmtoy4m -n $frames -F $mpeg2enc_framerate -A $aspect -I p -r -S 420mpeg2 bg.ppm |\
 mpeg2enc -f 8 $pulldown -b 200 -o video.m2v
 
+rm bg.ppm
+
 mplex -f 8 -o dvd-ready.mpg video.m2v audio.lpcm -L96000:2:24
+
+rm audio.lpcm
+rm video.m2v
 
 chapters=""
 for point in `cat start-points.txt`
@@ -128,6 +137,8 @@ do
 done
 
 chapters=${chapters%","}
+
+
 
 dvdauthor -o $outdir -t -c "$chapters" --file=dvd-ready.mpg
 dvdauthor -o $outdir -T
